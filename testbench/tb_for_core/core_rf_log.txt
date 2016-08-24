@@ -1,0 +1,128 @@
+(                  10) writing          1. to  0 
+(                  20) writing          2. to  1 
+(                  30) writing          3. to  2 
+(                  40) writing          4. to  3 
+(                  50) writing          5. to  4 
+(                  60) writing          6. to  5 
+(                  70) writing          7. to  6 
+(                  80) writing          8. to  7 
+(                  90) writing          9. to  8 
+(                 100) writing         10. to  9 
+(                 110) writing         11. to 10 
+(                 120) writing         12. to 11 
+(                 130) writing         13. to 12 
+(                 140) writing         14. to 13 
+(                 150) writing         15. to 14 
+(                 160) writing         16. to 15 
+(                 170) writing         17. to 16 
+(                 180) writing         18. to 17 
+(                 190) writing         19. to 18 
+(                 200) writing         20. to 19 
+(                 210) writing         21. to 20 
+(                 220) writing         22. to 21 
+(                 230) writing         23. to 22 
+(                 240) writing         24. to 23 
+(                 250) writing         25. to 24 
+(                 260) writing         26. to 25 
+(                 270) writing         27. to 26 
+(                 280) writing         28. to 27 
+(                 290) writing         29. to 28 
+(                 300) writing         30. to 29 
+(                 310) writing         31. to 30 
+(                 320) writing         32. to 31 
+(                 340) get          0. from  0 and get          0 from  0
+(                 350) get          0. from  1 and get          0 from  1
+(                 360) get          2. from  2 and get          2 from  2
+(                 370) get          3. from  3 and get          3 from  3
+(                 380) get          4. from  4 and get          4 from  4
+(                 390) get          5. from  5 and get          5 from  5
+(                 400) get          6. from  6 and get          6 from  6
+(                 410) get          7. from  7 and get          7 from  7
+(                 420) get          8. from  8 and get          8 from  8
+(                 430) get          9. from  9 and get          9 from  9
+(                 440) get         10. from 10 and get         10 from 10
+(                 450) get         11. from 11 and get         11 from 11
+(                 460) get         12. from 12 and get         12 from 12
+(                 470) get         13. from 13 and get         13 from 13
+(                 480) get         14. from 14 and get         14 from 14
+(                 490) get         15. from 15 and get         15 from 15
+(                 500) get         16. from 16 and get         16 from 16
+(                 510) get         17. from 17 and get         17 from 17
+(                 520) get         18. from 18 and get         18 from 18
+(                 530) get         19. from 19 and get         19 from 19
+(                 540) get         20. from 20 and get         20 from 20
+(                 550) get         21. from 21 and get         21 from 21
+(                 560) get         22. from 22 and get         22 from 22
+(                 570) get         23. from 23 and get         23 from 23
+(                 580) get         24. from 24 and get         24 from 24
+(                 590) get         25. from 25 and get         25 from 25
+(                 600) get         26. from 26 and get         26 from 26
+(                 610) get         27. from 27 and get         27 from 27
+(                 620) get         28. from 28 and get         28 from 28
+(                 630) get         29. from 29 and get         29 from 29
+(                 640) get         30. from 30 and get         30 from 30
+(                 650) get         31. from 31 and get         31 from 31
+(                 660) get         32. from  0 and write         32 to  0
+(                 670) get          0. from  1 and write         33 to  1
+(                 680) get         33. from  2 and write         34 to  2
+(                 690) get         34. from  3 and write         35 to  3
+(                 700) get         35. from  4 and write         36 to  4
+(                 710) get         36. from  5 and write         37 to  5
+(                 720) get         37. from  6 and write         38 to  6
+(                 730) get         38. from  7 and write         39 to  7
+(                 740) get         39. from  8 and write         40 to  8
+(                 750) get         40. from  9 and write         41 to  9
+(                 760) get         41. from 10 and write         42 to 10
+(                 770) get         42. from 11 and write         43 to 11
+(                 780) get         43. from 12 and write         44 to 12
+(                 790) get         44. from 13 and write         45 to 13
+(                 800) get         45. from 14 and write         46 to 14
+(                 810) get         46. from 15 and write         47 to 15
+(                 820) get         47. from 16 and write         48 to 16
+(                 830) get         48. from 17 and write         49 to 17
+(                 840) get         49. from 18 and write         50 to 18
+(                 850) get         50. from 19 and write         51 to 19
+(                 860) get         51. from 20 and write         52 to 20
+(                 870) get         52. from 21 and write         53 to 21
+(                 880) get         53. from 22 and write         54 to 22
+(                 890) get         54. from 23 and write         55 to 23
+(                 900) get         55. from 24 and write         56 to 24
+(                 910) get         56. from 25 and write         57 to 25
+(                 920) get         57. from 26 and write         58 to 26
+(                 930) get         58. from 27 and write         59 to 27
+(                 940) get         59. from 28 and write         60 to 28
+(                 950) get         60. from 29 and write         61 to 29
+(                 960) get         61. from 30 and write         62 to 30
+(                 970) get         62. from 31 and write         63 to 31
+(                 980) get         63. from 31 and write         64 to  0
+(                 990) get         63. from 31 and write         65 to  1
+(                1000) get         63. from 31 and write         66 to  2
+(                1010) get         63. from 31 and write         67 to  3
+(                1020) get         63. from 31 and write         68 to  4
+(                1030) get         63. from 31 and write         69 to  5
+(                1040) get         63. from 31 and write         70 to  6
+(                1050) get         63. from 31 and write         71 to  7
+(                1060) get         63. from 31 and write         72 to  8
+(                1070) get         63. from 31 and write         73 to  9
+(                1080) get         63. from 31 and write         74 to 10
+(                1090) get         63. from 31 and write         75 to 11
+(                1100) get         63. from 31 and write         76 to 12
+(                1110) get         63. from 31 and write         77 to 13
+(                1120) get         63. from 31 and write         78 to 14
+(                1130) get         63. from 31 and write         79 to 15
+(                1140) get         63. from 31 and write         80 to 16
+(                1150) get         63. from 31 and write         81 to 17
+(                1160) get         63. from 31 and write         82 to 18
+(                1170) get         63. from 31 and write         83 to 19
+(                1180) get         63. from 31 and write         84 to 20
+(                1190) get         63. from 31 and write         85 to 21
+(                1200) get         63. from 31 and write         86 to 22
+(                1210) get         63. from 31 and write         87 to 23
+(                1220) get         63. from 31 and write         88 to 24
+(                1230) get         63. from 31 and write         89 to 25
+(                1240) get         63. from 31 and write         90 to 26
+(                1250) get         63. from 31 and write         91 to 27
+(                1260) get         63. from 31 and write         92 to 28
+(                1270) get         63. from 31 and write         93 to 29
+(                1280) get         63. from 31 and write         94 to 30
+(                1290) get         63. from 31 and write         95 to 31

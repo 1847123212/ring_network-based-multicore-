@@ -1,0 +1,41 @@
+///add_funct, alu_result should be 32'h00000005,actually is 00000005
+///add_funct, alu_result should be 32'h00000005,actually is 00000005
+///add_funct, alu_result should be 32'h00000006,actually is 00000006
+///add_funct, alu_result should be 32'h00000003,actually is 00000003
+///add_funct, alu_result should be 32'h00000003,actually is 00000003
+///add_funct, alu_result should be 32'h00000003,actually is 00000003
+///add_funct, alu_result should be 32'h00000004,actually is 00000004
+///add_funct, alu_result should be 32'h00000004,actually is 00000004
+///add_funct, alu_result should be 32'h00000005,actually is 00000005
+///add_funct, alu_result should be 32'h00000007,actually is 00000007
+///add_funct, alu_result should be 32'h00000008,actually is 00000008
+///add_funct, alu_result should be 32'h00000006,actually is 00000006
+//lw,sw,ll,sc,addiu,addi;alu_result should be 32'h00000006,actually is 00000006
+//beq zero should be 0,actually is ffffffff
+//bne zero should be 0,actually is ffffffff
+//blez here we don't care about alu_result should be ,actually is ffffffff
+alu_result should be ,actually is ffffffff
+//bgtz here we don't care about alu_result should be ,actually is ffffffff
+//bltz here we don't care about alu_result should be ,actually is ffffffff
+//bgez here we don't care about alu_result should be ,actually is ffffffff
+///add_funct, alu_result should be 32'h00000003,actually is 00000003
+`addu_funct alu_result should be 32'h00000003 ,actually is 00000003
+`sub_funct; alu_result should be 32'hffffffff,actually is ffffffff
+`subu_funct; alu_result should be 32'hffffffff,actually is ffffffff
+`and_funct; alu_result should be 32'h00000000,actually is 00000000
+`or_funct; alu_result should be 32'h00000003,actually is 00000003
+`slt_funct; alu_result should be 32'h00000001,actually is 00000001
+`sltu_funct; alu_result should be 32'h00000001,actually is 00000001
+`sll_funct; alu_result should be 32'h00000010,actually is 00000010
+`srl_funct; alu_result should be 32'h0000001e;,actually is 0000001e
+`sra_funct; alu_result should be 32'h1000001e,actually is 1000001e
+	`sllv_funct; alu_result should be 32'h00007f80,actually is 00007f80
+	`srlv_funct; alu_result should be 32'h000001fe,actually is 000001fe
+`srav_funct; alu_result should be 32'h080000ff;,actually is 080000ff
+`xor_funct; alu_result should be 32'h00000003,actually is 00000003
+`nor_funct; alu_result should be 32'hfffffffc,actually is fffffffc
+ //slt_op alu_result should be 32'h00000001,actually is 00000001
+//andi alu_result should be 32'h00000001,actually is 00000001
+//ori alu_result should be 32'h00000005,actually is 00000005
+//xori alu_result should be 32'h00000004,actually is 00000004
+//lui alu_result should be 32'h00050000; actually is 00050000

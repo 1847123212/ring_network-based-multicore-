@@ -1,0 +1,30 @@
+               20000, push 1st addr: 12340000 into ras
+               30000ime, push 2nd addr: 12340001 into ras
+               40000ime, push 3nd addr: 12340002 into ras
+               50000ime, push 4nd addr: 12340003 into ras
+               60000ime, push 5nd addr: 12340004 into ras
+               70000ime, push 6nd addr: 12340005 into ras
+               80000ime, push 7nd addr: 12340006 into ras
+               90000ime, push 8nd addr: 12340007 into ras
+              110000ime, pop 8st addr: 48d0001c pop 8th addr 30'h12340007;
+              120000ime, pop 7st addr: 48d00018 pop 7th addr 30'h12340006;
+              130000ime, pop 6st addr: 48d00014 pop 6th addr 30'h12340005;
+              140000ime, pop 5st addr: 48d00010 pop 5th addr 30'h12340004;
+              150000ime, pop 4st addr: 48d0000c pop 4th addr 30'h12340003;
+              160000ime, pop 3st addr: 48d00008 pop 3th addr 30'h12340002;
+              170000ime, pop 2st addr: 48d00004 pop 2th addr 30'h12340001;
+              180000ime, pop 1st addr: 48d00000 pop 1st addr 30'h12340000;
+              220000ime, push  addr: 12340078 into ras
+              230000ime, push  addr: 12340077 into ras
+              240000ime, pop  addr: zzzzzzzZ 
+              250000ime,recover_push_addr=30'h12340077;
+              280000ime, push  addr: 12340076 into ras
+              300000ime, pop  addr: zzzzzzzZ 
+              310000ime, pop  addr: 48d001d8 ret_addr_out should be 30'h12340076;
+              340000ime, pop  addr: zzzzzzzZ ret_addr_out should be 30'h12340077;
+              370000ime, pop  addr: zzzzzzzZ ret_addr_out is 30'h12340075;
+              390000ime, pop  addr: zzzzzzzZ ret_addr_out is 30'h12340077;
+              410000ime, pop  addr: zzzzzzzZ ret_addr_out is 30'h12340078;
+              420000ime, push  addr: 20160405 into ras
+              430000ime, push  addr: 20160404 into ras
+              440000ime, push  addr: 20000406 into ras ;this is a non-call inst!

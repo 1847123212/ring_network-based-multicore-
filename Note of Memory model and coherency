@@ -1,0 +1,639 @@
+note of a primer on memory consistency and coherency!
+3.8 OPTIMIZED SC IMPLEMENTATIONS WITH CACHE COHERENCE
+   1.Non-Binding Prefetching
+    ---Importantly, in no case does a non-binding prefetch change the state of a register or data in block B.
+    ---The effect of the non-binding prefetch is limited to within the “cache-coherent memory system”,
+    ---making the effect of non-binding prefetches on the memory consistency model to be the functional equivalent of a no-op. 
+    ---So long as the loads and stores are performed in program order, 
+    ---it does not matter in what order coherence permissions are obtained.
+    Conclusion
+    ---Implementations may do non-binding prefetches without affecting the memory consistency model.
+    ---This is useful for both internal cache prefetching (e.g., stream buffers) and more aggressive cores.
+    
+   2.Speculative Cores
+    ---a prefetch (Gets) caused by a load after a speculative branch will load a value to a register ,while it won't make mistakes into 
+    ---architecture states because of the commit state ,which is important to filter the speculative stores.
+   
+   3.Dynamically Scheduled Cores
+    ---However, in the context of a multicore processor,
+    ---dynamic scheduling introduces a new issue: memory consistency speculation. Consider a core
+    ---that wishes to dynamically reorder the execution of two loads, L1 and L2 (e.g., because L2’s address
+    ---is computed before L1’s address). Many cores will speculatively execute L2 before L1, and they are
+    ---predicting that this reordering is not visible to other cores, which would violate SC
+    
+    Here are two solutions to verify the speculating SC
+       First ,after the core speculatively executes L2, but before it commits L2,
+    ---the core could check that the speculatively accessed block has not left the cache. 
+    ---So long as the block remains in the cache, its value could not have changed between the load’s execution and its commit.
+    ---To perform this check, the core tracks the address loaded by L2 and compares it to blocks evicted and to incoming coherence requests.
+    ---An incoming GetM indicates that another core could observe L2 out of order, and this GetM would imply a misspeculation
+    ---and squash the speculative execution.
+       The second checking technique is to replay each speculative load when the core is ready to
+    ---commit the load . If the value loaded at commit does not equal the value that was previously
+    ---loaded speculatively, then the prediction was incorrect. In the example, if the replayed load value of
+    ---L2 is not the same as the originally loaded value of L2, then the load–load reordering has resulted
+    ---in an observably different execution and the speculative execution must be squashed.
+    
+    Comparision to these two solutions 
+      Hardware complexity:
+               first one : since there are always a Ld queue to trace the flight loads and every load entry has a ex bit to remember whether
+                           the corresponding load has actually access the cache. So it's the responsibility for the entries with ex bit on to snoop 
+                           the addr of evicted blocks, addrs of incoming coherency requests during their lifetime,thus needing a full associate search
+                           logic in the Ld queue.
+               second one: less complexity on hardward,but heavy bandwidths will occur to cache, also delay the life time of many load in the Ld queue,
+                           which apprently requires more number of entries in the queue.
+      bandwidth comparision:
+              first one:   normally,having few effect on bandwidth 
+              second one : heavy traffic on cache!
+      result of comparision: the second solution seems to be reasonable for designer to select!
+   4.Multithreading
+      one chanllenge is ensuring that a thread T1 cannot read a value written by another thread T2 on the same core before the store has been
+      made "visible" to threads on other cores .Thus .load should get the value from the local cache instead of non_local_id's Store_buffer.
+3.9 ATOMIC OPERATIONS WITH SC
+     An even more optimized implementation of RMWs could allow more time between when
+   the load part and store part perform, without violating atomicity. Consider the case where the block
+   is in a read-only state in the cache. The load part of the RMW can speculatively perform immediately,
+   while the cache controller issues a coherence request to upgrade the block’s state to read–write.
+   When the block is then obtained in read–write state, the write part of the RMW performs. As long
+   as the core can maintain the illusion of atomicity, this implementation is correct. To check whether
+   the illusion of atomicity is maintained, the core must check whether the loaded block is evicted
+   from the cache between the load part and the store part; this speculation support is the same as that
+   needed for detecting mis-speculation in SC .
+   
+ CASE StuDy: MIPS 10000
+      Importantly, the eviction of a cache block—due to a coherence invalidation or to make room
+   for another block—that contains a load’s address in the address queue squashes the load and all
+   subsequent instructions, which then re-execute. Thus, when a load finally commits, the loaded
+   block was continuously in the cache between when it executed and when it commits, so it must get
+   the same value as if it executed at commit.
+
+
+4.4 IMPLEMENTING TSO/x86
+
+     Finally, multithreading introduces a subtle write buffer issue for TSO. TSO write buffers are
+   logically private to each thread context (virtual core). Thus, on a multithreaded core, one thread
+   context should never bypass from the write buffer of another thread context. This logical separation
+   can be implemented with per-thread-context write buffers or, more commonly, by using a shared write 
+   buffer with entries tagged by thread-context identifiers that permit bypassing only when tags match.
+   
+   4.5 ATOMIC INSTRUCTIONS AND FENCES WITH TSO
+   
+   4.5.1 Atomic Instructions
+     To understand the implementation of atomic RMWs in TSO, we consider the RMW as a
+   load immediately followed by a store. The load part of the RMW cannot pass earlier loads due to
+   TSO’s ordering rules. It might at first appear that the load part of the RMW could pass earlier
+   stores in the write buffer, but this is not legal. If the load part of the RMW passes an earlier store,
+   then the store part of the RMW would also have to pass the earlier store because the RMW is
+   an atomic pair. But because stores are not allowed to pass each other in TSO, the load part of the
+   RMW cannot pass an earlier store either.
+     These ordering constraints on RMWs impact the implementation. Because the load part of
+   the RMW cannot be performed until earlier stores have been ordered (i.e., exited the write buffer),
+   the atomic RMW effectively drains the write buffer before it can perform the load part of the
+   RMW. Furthermore, to ensure that the store part can be ordered immediately after the load part,
+   the load part requires read–write coherence permissions, not just the read permissions that suffice
+   for normal loads. Lastly, to guarantee atomicity for the RMW, the cache controller may not relinquish
+   coherence permission to the block between the load and the store.
+     
+       More optimized implementations of RMWs are possible. For example, the write buffer does
+   not need to be drained as long as (a) every entry already in the write buffer has read–write permission
+   in the cache and maintains the read–write permission in the cache until the RMW commits and (b) the core
+   performs MIPS R10000-style checking of load speculation (Section 3.8). Logically,
+   all of the earlier stores and loads would then commit as a unit (sometimes called a “chunk”)
+   immediately before the RMW.
+   
+   4.5.2 FENCEs
+       For systems that support TSO, the FENCE thus prohibits a load from bypassing an earlier store.
+       
+       
+?????? question
+   DIFFERENCE between TSO of X86 model,in which each core sees its own store immediately, 
+   and when any other cores see a store, all other cores see it. This property is
+   called write atomicity in the next chapter (Section 5.5)
+   and SC model in Multithread core ,which is that loads of thread 1 can't bypass the store value of thread 2,3,4... 
+   
+   because TSO model support bypass store value to load ,which results in a load can see a store value written by same virtual core 
+   before another virtual cores can !
+   
+   5.1.1 Opportunities to Reorder Memory Operations
+   
+     If proper operation does not depend on ordering among many loads and stores, perhaps one
+   could obtain higher performance by relaxing the order among them, since loads and stores are typically
+   much more frequent than lock acquires and releases. This is what relaxed or weak models do.
+   
+   5.1.2 Opportunities to Exploit Reordering
+   
+    5.1.2.1 Non-FIFO, Coalescing Write Buffer
+       Recall that TSO enables the use of a FIFO write buffer, which improves performance by hiding
+   some or all of the latency of committed stores.
+       Although a FIFO write buffer improves performance, an even more optimized design would use a non-FIFO 
+   write buffer that permits coalescing of writes (i.e., two stores that are not consecutive in program order 
+   can write to the same entry in the write buffer). However, a non-FIFO coalescing write buffer violates TSO 
+   because TSO requires stores to appear in program order. Our example relaxed model allows stores to coalesce 
+   in a non-FIFO write buffer, so long as the stores have not been separated by a FENCE.
+   
+  5.1.2.2 Simpler Support for Core Speculation
+     Unlike MIPS 10000,parallelism. In a system with a relaxed memory consistency model, a core can execute loads
+   out of program order without having to compare the addresses of these loads to the addresses of incoming coherence
+   requests. These loads are not speculative with respect to the relaxed consistency model (although
+   they may be speculative with respect to, say, a branch prediction or earlier stores by the same thread
+   to the same address).
+
+ ????????? 5.1.2.3 Coupling Consistency and Coherence
+ 
+     ??? why relax model can open the coherency box to gain performance???
+     
+      We previously advocated decoupling consistency and coherence to manage intellectual complexity.
+   Alternatively, relaxed models can provide better performance than strong models by “opening the
+   coherence box.” For example, an implementation might allow a subset of cores to load the new value
+   from a store even as the rest of the cores can still load the old value, temporarily breaking coherence’s
+   single-writer–multiple-reader invariant. This situation can occur, for example, when two thread
+   contexts logically share a per-core write buffer or when two cores share an L1 data cache. However,
+   “opening the coherence box” incurs considerable intellectual and verification complexity, bringing
+   to mind the Greek myth about Pandora’s box. As we will discuss in Section 5.6, IBM Power permits
+   the above optimizations, but first we explore relaxed models with the coherence box sealed tightly.
+   
+7.1 INTRODUCTION TO SNOOPING
+ 
+ As for request!
+ 
+    The ordered broadcast ensures that every coherence controller observes the
+  same series of coherence requests in the same order, i.e., that there is a total order of coherence
+  requests. Since a total order subsumes all per-block orders, this total order guarantees that all coherence
+  controllers can correctly update a cache block’s state.
+    Consider the example in Table 7.3 which involves two blocks A and B; each block
+  is requested exactly once and so the system trivially observes per-block request orders. Yet because
+  cores C1 and C2 observe the GetM and GetS requests out-of-order, this execution violates both the
+  SC and TSO memory consistency models.
+    Requiring that broadcast coherence requests be observed in a total order has important implications
+  for the interconnection network used to implement traditional snooping protocols. Because
+  many coherence controllers may simultaneously attempt to issue coherence requests, the interconnection
+  network must serialize these requests into some total order. However the network determines
+  this order, this mechanism becomes known as the protocol’s serialization (ordering) point.
+  This arbitration logic acts as the serialization point because it effectively determines
+  the order in which requests appear on the bus.
+  
+  As for response!
+  
+    There are few constraints on response messages. They can travel on a separate interconnection
+  network that does not need to support broadcast nor have any ordering requirements.
+  Because response messages carry data and are thus much longer than requests, there are significant
+  benefits to being able to send them on a simpler, lower-cost network. Notably, response messages
+  do not affect the serialization of coherence transactions. Logically, a coherence transaction—which
+  consists of a broadcast request and a unicast response—occurs when the request is ordered, regardless
+  of when the response arrives at the requestor. The time interval between when the request appears
+  on the bus and when the response arrives at the requestor does affect the implementation of the
+  protocol (e.g., during this gap, are other controllers allowed to request this block? If so, how does
+  the requestor respond?), but it does not affect the serialization of the transaction.
+  
+  
+  7.2.2 Simple Snooping System Model: Atomic Requests, Atomic Transactions  (refer to page 110)
+  
+  Atomic Requests and Atomic Transactions. 
+  
+      The Atomic Requests : 
+       property states that a coherence request is ordered in the same cycle that it is issued.
+  This property eliminates the possibility of a block’s state changing—due to another core’s coherence request—between
+  when a request is issued and when it is ordered. 
+  
+      The Atomic Transactions:
+       property states that coherence transactions are atomic in that a subsequent request for the same block may not
+  appear on the bus until after the first transaction completes (i.e., until after the response has appeared on the bus).
+  
+    Because coherence involves operations on a single block, whether or not the system permits subsequent requests to 
+  different blocks does not impact the protocol.
+  
+  The system model’s atomicity properties simplify cache miss handling in two ways. First,
+the Atomic Requests property ensures that when a cache controller seeks to upgrade permissions to a
+block—to go from I to S, I to M, or S to M—it can issue a request without worrying that another
+core’s request might be ordered ahead of its own. Thus, the cache controller can transition immediately
+to state ISD, IMD, or SMD, as appropriate, to wait for a data response. Similarly, the Atomic
+Transactions property ensures that no subsequent requests for a block will occur until after the current
+transaction completes, eliminating the need to handle requests from other cores while in one
+of these transient states.
+
+
+7.2.3 Baseline Snooping System Model: Non-Atomic Requests,Atomic Transactions
+
+ Non-atomic requests arise from a number of implementation optimizations, but most commonly due to inserting a message
+ queue (or even a single buffer) between the cache controller and the bus.
+ 
+ Relaxing the Atomic Requests property introduces numerous situations in which a cache controller observes a request from another controller
+ on the bus in between issuing its coherence request and observing its own coherence request on
+ the bus.
+ 
+ The window of vulnerability during the S-to-M transition complicates the addition of an Upgrade transaction,as the sidebar below.
+ 
+                       Sidebar: Upgrade Transactions in Systems Without Atomic Requests
+                       
+ For the protocol with Atomic Requests, an Upgrade transaction is an efficient way for a cache to
+ transition from Shared to Modified. The Upgrade request invalidates all shared copies, and it is
+ much faster than issuing a GetM, because the requestor needs to wait only until the Upgrade
+ is serialized (i.e., the bus arbitration latency) rather than wait for data to arrive from the LLC /
+ memory.
+ However, without Atomic Requests, adding an Upgrade transaction becomes more difficult
+ because of the window of vulnerability between issuing a request and when the request is serialized.
+ The requestor may lose its shared copy due to an Other-GetM or Other-Upgrade that is
+ serialized during this window of vulnerability. The simplest solution to this problem is to change
+ the block’s state to a new state in which it waits for its own Upgrade to be serialized. When its
+ Upgrade is serialized, which will invalidate other S copies (if any) but will not return data, the
+ core must then issue a subsequent GetM request to transition to M.
+ Handling Upgrades more efficiently is difficult, because the LLC/memory needs to know
+ when to send data. Consider the case in which cores C0 and C2 have a block A shared and both
+ seek to upgrade it and, at the same time, core C1 seeks to read it. C0 and C2 issue Upgrade
+ requests and C1 issues a GetS request. Suppose they serialize on the bus as C0, C1, and C2.
+ C0’s Upgrade succeeds, so the LLC/memory (in state IorS) should change its state to M but not
+ send any data, and C2 should invalidate its S copy. C1’s GetS finds the block in state M at C0,
+ which responds with the new data value and updates the LLC/memory back to state IorS. C2’s
+ Upgrade finally appears, but because it has lost its shared copy, it needs the LLC/memory to respond.
+ Unfortunately, the LLC/memory is in state IorS and cannot tell that this Upgrade needs
+ data. Alternatives exist to solve this issue, but are outside the scope of this primer.
+
+
+ The window of vulnerability also affects the M-to-I coherence downgrade, in a much more significant way.
+ 
+ To replace a block in state M, the cache controller issues a PutM request and
+changes the block state to MIA; unlike the protocol in Section 7.2.2, it does not immediately send
+the data to the memory controller. Until the PutM is observed on the bus, the block’s state is effectively
+M and the cache controller must respond to other cores’ coherence requests for the block. In
+the case where no intervening coherence requests arrive, the cache controller responds to observing
+its own PutM by sending the data to the memory controller and changing the block state to state
+I. If an intervening GetS or GetM request arrives before the PutM is ordered, the cache controller
+must respond as if it were in state M and then transition to state IIA to wait for its PutM to appear
+on the bus. Intuitively, the cache controller should simply transition to state I once it sees its PutM
+because it has already given up ownership of the block. Unfortunately, doing so will leave the memory
+controller stuck in a transient state because it also receives the PutM request. Nor can the cache
+controller simply send the data anyway because doing so might overwrite valid data. The solution is
+for the cache controller to send a special NoData message to the memory controller when it sees its
+PutM while in state IIA. The memory controller is further complicated by needing to know which
+stable state it should return to if it receives a NoData message. We solve this problem by adding a
+second transient memory state MD. Note that these transient states represent an exception to our
+usual transient state naming convention. In this case, state XD indicates that the memory controller
+should revert to state X when it receives a NoData message (and move to state IorS if it receives a
+data message).
+
+7.3 ADDING THE EXCLUSIVE STATE
+   A cache controller may silently change a cache block’s state from E to M without issuing a coherence request.
+ 7.3.1 Motivation
+  The Exclusive state is used in almost all commercial coherence protocols because it optimizes a
+common case. Compared to an MSI protocol, a MESI protocol offers an important advantage in
+the situation in which a core first reads a block and then subsequently writes it.
+
+ 7.3.2 Getting to the Exclusive State
+  Before explaining how the protocol works, we must first figure out how the issuer of a GetS determines
+that there are no other sharers and thus that it is safe to go directly to state E instead of state
+S. There are at least two possible solutions:
+     **Adding a wired-OR “sharer” signal to bus:
+     **Maintaining extra state at the LLC:an alternative solution is for the LLC to distinguish
+     between states I (no sharers) and S (one or more sharers), which was not needed for the
+     MSI protocols. In state I, the memory controller responds with data that is specially labeled
+as being Exclusive; in state S, the memory controller responds with data that is unlabeled.
+However, maintaining the S state exactly is challenging, since the LLC must detect when
+the last sharer relinquishes its copy. First, this requires that a cache controller issues a PutS
+message when it evicts a block in state S. Second, the memory controller must maintain
+a count of the sharers as part of the state for that block. This is much more complex
+and bandwidth intensive than our previous protocols, which allowed for silent evictions of
+blocks in S. A simpler, but less complete, alternative allows the LLC to conservatively track
+sharers; that is, the memory controller’s state S means that there are zero-or-more caches
+in state S. The cache controller silently replaces blocks in state S, and thus the LLC stays in
+S even after the last sharer has been replaced. If a block in state M is written back (with a
+PutM), the state of the LLC block becomes I. This “conservative S” solution forgoes some
+opportunities to use the E state (i.e., when the last sharer replaces its copy before another
+core issues a GetM), but it avoids the need for explicit PutS transactions and still captures
+many important sharing patterns.
+
+  7.3.3 High-Level Specification of Protocol
+  
+  Sidebar: MESI Snooping if E is Non-ownership State  
+  
+  One solution to this problem is to have the LLC/memory wait for the cache to respond.
+When a GetS or GetM is serialized on the bus, a cache with the block in state M responds with
+data. The memory controller waits a fixed amount of time and, if no response appears in that
+window of time, the memory controller deduces that it is the owner and that it must respond.
+If a response from a cache does appear, the memory controller does not respond to the coherence
+request. This solution has a couple drawbacks, including potentially increased latency for
+responses from memory. Some implementations hide some or all of this latency by speculatively
+prefetching the block from memory, at the expense of increased memory bandwidth, power, and
+energy. A more significant drawback is having to design the system such that the caches’ response
+latency is predictable and short.
+
+/*********************** STILL some problems about mem controler occur to me in page 119**********************/
+
+7.4 ADDING THE OWNED STATE
+ 
+ 7.4.1 Motivation
+     Adding the O state achieves two benefits: (1) it eliminates the extra data message to update
+  the LLC/memory when a cache receives a GetS request in the M (and E) state, and (2) it eliminates
+  the potentially unnecessary write to the LLC (if the block is written again before being written
+  back to the LLC).
+  
+7.5 NON-ATOMIC BUS
+
+7.5.1 Motivation
+
+  the operation of a pipelined, non-atomic bus. The key advantage is not
+  having to wait for a response before a subsequent request can be serialized on the bus, and thus the
+  bus can achieve much higher bandwidth using the same set of shared wires.
+  
+7.5.2 In-Order vs. Out-of-order Responses
+
+  One major design issue for a non-atomic bus is whether it is pipelined or split-transaction. A
+  pipelined bus, as illustrated in Figure 7.9, provides responses in the same order as the requests. A
+  split-transaction bus, illustrated in Figure 7.10, can provide responses in an order different from the
+  request order.
+  
+  The advantage of a split-transaction bus, with respect to a pipelined bus, is that a low-latency
+  response does not have to wait for a long-latency response to a prior request.
+  
+  With a split-transaction bus, the response must carry the identity of the request or the requestor.
+  
+7.5.3 Non-Atomic System Model
+
+  The request bus and the response bus are split and operate independently.
+  
+  With FIFOs, Notably, if a coherence controller stalls when processing
+  an incoming request from the request bus, then all requests behind it (serialized after the stalled
+  request) will not be processed by that coherence controller until it processes the currently stalled request.
+  These queues are processed in a strict FIFO fashion, regardless of message type or address.
+  
+7.5.4 An MSI Protocol with a Split-Transaction Bus
+ 
+    Several transitions are now possible that were not possible with the atomic bus. For example,
+  a cache can now receive an Other-GetS for a block it has in state ISD.
+  All of these newly possible transitions are for blocks in transient states
+  in which the cache is awaiting a data response; while waiting for the data, the cache first observes
+  another coherence request for the block.
+  
+    that a transaction is ordered based
+  on when its request is ordered on the bus, not when the data arrives at the requestor. Thus, in each
+  of these newly possible transitions, the cache has already effectively completed its transaction but
+  just happens to not have the data yet. Returning to our example of ISD, the cache block is effectively
+  in S. Thus, the arrival of an Other-GetS in this state requires no action to be taken because a cache
+  with a block in S need not respond to an Other-GetS.
+  
+   The newly possible transitions other than the above example, however, are more complicated.
+  Consider a block in a cache in state IMD when an Other-GetS is observed on the bus. The cache
+  block is effectively in state M and the cache is thus the owner of the block but does not yet have
+  the block’s data. Because the cache is the owner, the cache must respond to the Other-GetS, yet
+  the cache cannot respond until it receives the data. The simplest solution to this situation is for the
+  cache to stall processing of the Other-GetS until the data response arrives for its Own-GetM. At
+  that point, the cache block will change to state M and the cache will have valid data to send to the
+  requestor of the Other-GetS.
+  
+  ??????????????????????????????????????????????????????????????????????????????????????????????????????
+  ---------------------------Here I think the subsequential other-Gets should 
+  get the modified data from previous GetM---------------------------------------------------------
+  ??????????????????????????????????????????????????????????????????????????????????????????????????????
+  
+  
+  Stalling raises three issues. 
+  
+  First, it sacrifices some performance.
+  Second, stalling raises the potential of deadlock. 
+  The third issue raised by stalling coherence requests is that, perhaps surprisingly, it enables
+  a requestor to observe a response to its request before processing its own request. So we need to 
+  add three more transitions IMa,SMa,ISa,to the protocol 
+  
+7.5.5 An Optimized, Non-Stalling MSI Protocol with a Split-Transaction Bus
+  
+  As mentioned in the previous section, we sacrificed some performance by stalling on the newly
+  possible transitions of the system with the split-transaction bus. For example, a cache with a block
+  in state ISD stalled instead of processing an Other-GetM for that block. However, it is possible
+  that there are one or more requests after the Other-GetM, to other blocks, that the cache could
+  process without stalling. By stalling a request, the protocol stalls all requests after the stalled request
+  and delays those transactions from completing.
+  
+  The solution to this problem is to process all messages, in order, instead of stalling. Our approach
+  is to add transient states that reflect messages that the coherence controller has received but
+  must remember to complete at a later event. Returning to the example of a cache block in ISD, if the
+  cache controller observes an Other-GetM on the bus, then it changes the block state to ISDI (which
+  denotes “in I, going to S, waiting for data, and when data arrives will go to I”).
+  
+  To guarantee that this livelock cannot arise, we require that a cache in ISdI, IMdI,
+  IMdS, or IMdSI (or any comparable state in a protocol with additional stable coherence states)
+  perform one load or store to the block when it receives the data for its request. After performing
+  one load or store, it may then change state and forward the block to another cache. We defer a more
+  in-depth treatment of livelock to Section 9.3.2
+  
+  We have not removed the stalls from the memory controller because it is not feasible.
+  
+7.6 OPTIMIZATIONS TO THE BUS INTERCONNECTION NETWORK
+
+7.6.1 Separate Non-Bus Network for Data Responses
+
+We have emphasized the need of snooping systems to provide a total order of broadcast coherence
+requests. The example in Table 7.2 showed how the lack of a total order of coherence requests can
+lead to incoherence. However, there is no such need to order coherence responses, nor is there a need
+to broadcast them. Thus, coherence responses could travel on a separate network that does not support
+broadcast or ordering. Such networks include crossbars, meshes, tori, butterflies, etc.
+
+7.6.2 Logical Bus for Coherence Requests
+
+Snooping systems require that there exist a total order of broadcast coherence requests. A sharedwire
+bus for coherence requests is the most straightforward way to achieve this total order of broadcasts,
+but it is not the only way to do so. There are two ways to achieve the same totally ordered
+broadcast properties as a bus (i.e., a logical bus) without having a physical bus.
+
+*One notable example is a tree with the coherence controllers at the leaves of the tree.
+If all coherence requests are unicasted to the root of the tree and then broadcast down the tree,
+then each coherence controller observes the same total order of coherence broadcasts. The serialization point in
+this topology is the root of the tree.
+
+**Logical total order: a total order of broadcasts can be obtained even without a network
+topology that naturally provides such an order. The key is to order the requests in logical
+time. Martin et al. [6] designed a snooping protocol, called Timestamp Snooping, that can
+function on any network topology. To issue a coherence request, a cache controller broadcasts
+it to every coherence controller and labels the broadcast with the logical time at which
+the broadcast message should be ordered.
+
+   The protocol must ensure that (a) every broadcast has a distinct logical time, 
+   (b) coherence controllers process requests in logical time order (even when they arrive out of this order in physical time),
+   and (c) no request at logical time T can arrive at a controller after that controller has passed logical time T.
+
+CASE STUDY:
+1.Sun Starfire E10000
+
+All links in the tree are point-to-point, thus eliminating the need for
+buses. A processor unicasts a request up to the top of the tree, where it is serialized and then broadcast
+down the tree. Because of the serialization at the root, the tree provides totally ordered broadcast.
+
+A given request may arrive at two processors at different times, which is fine; the important
+constraint is that the processors observe the same total order of requests. To improve bandwidth, the E10000 implements
+the data network as a crossbar. Once again, there are point-to-point links instead of buses, and the
+bandwidth of the crossbar far exceeds what would be possible with a bus (physical or logical).
+
+2.IBM Power5
+
+
+
+   CH 8  Directory Coherence Protocols
+
+8.1 INTRODUCTION TO DIRECTORY PROTOCOLS
+    Like snooping protocols, a directory protocol needs to define when and how coherence transactions
+  become ordered with respect to other transactions. In most directory protocols, a coherence
+  transaction is ordered at the directory. Multiple coherence controllers may send coherence requests
+  to the directory at the same time, and the transaction order is determined by the order in which
+  the requests are serialized at the directory. 
+     If two requests race to the directory, the interconnection
+  network effectively chooses which request the directory will process first. The fate of the request
+  that arrives second is a function of the directory protocol and what types of requests are racing. The
+  second request might get
+     (a) processed immediately after the first request, 
+     (b) held at the directory while awaiting the first request to complete, 
+     (c) negatively acknowledged (NACKed).
+     
+     Traditional snooping protocols create a total order by serializing
+all transactions on the ordered broadcast network. Snooping’s total order not only ensures that each
+block’s requests are processed in per-block order but also facilitates implementing a memory consistency
+model.
+     In contrast, a directory protocol orders transactions at the directory to ensure that conflicting
+requests are processed by all nodes in per-block order. However, the lack of a total order means that
+a requestor in a directory protocol needs another strategy to determine when its request has been
+serialized and thus when its coherence epoch may safely begin. Because (most) directory protocols
+do not use totally ordered broadcast, there is no global notion of serialization. Rather, a request must
+be individually serialized with respect to all the caches that (may) have a copy of the block. Explicit
+messages are needed to notify the requestor that its request has been serialized by each relevant
+cache. In particular, on a GetM request, each cache controller with a shared (S) copy must send an
+explicit acknowledgment (Ack) message once it has serialized the invalidation message.
+
+ 8.2.3 Avoiding Deadlock
+ 
+ Virtual Networks
+  A well-known solution for avoiding deadlock in coherence protocols is to use separate networks
+for each class of message. The networks can be physically separate or logically separate (called
+virtual networks), but the key is avoiding dependences between classes of messages. Figure 8.5
+illustrates a system in which request and response messages travel on separate physical networks.
+Because a response cannot be blocked by another request, it will eventually be consumed by its destination
+node, breaking the cyclic dependence.
+  
+ Three networks!
+  The directory protocol in this section uses three networks to avoid deadlock. Because a request
+can cause a forwarded request and a forwarded request can cause a response, there are three
+message classes that each require their own network.
+ 1. Request messages are GetS, GetM, and PutM.
+ 2. Forwarded request messages are Fwd-GetS, Fwd-GetM, Inv(alidation), and Put-Ack.
+ 3. Response messages are Data and Inv-Ack.
+The protocols in this chapter require that the Forwarded Request network provides point-to-point ordering; 
+other networks have no ordering constraints nor are there any ordering constraints between messages traveling on different networks.
+
+8.2.4 Detailed Protocol Specification
+
+  The coherence controllers must manage the states of blocks that are in the midst of
+coherence transactions, including situations in which a cache controller receives a forwarded request
+from another controller in between sending its coherence request to the directory and receiving all
+of its necessary response messages, including Data and possible Inv-Acks. The cache controllers can
+maintain this state in the miss status handling registers (MSHRs) that cores use to keep track of
+outstanding coherence requests.
+
+8.2.6 Protocol Simplifications
+
+Two kinds of Protocol Simplifications
+
+The most significant simplification, other than having only three stable states, is that the
+protocol stalls in certain situations. For example, a cache controller stalls when it receives
+a forwarded request while in a transient state. A higher performance option, discussed in
+Section 8.7.2, would be to process the messages and add more transient states.
+
+A second simplification is that the directory sends Data (and the AckCount) in response to
+a cache that is changing a block’s state from S to M. The cache already has valid data and
+thus it would be sufficient for the directory to simply send a data-less AckCount. We defer
+adding this new type of message until we present the MOSI protocol in Section 8.4.
+
+8.3 ADDING THE EXCLUSIVE STATE
+
+   Because the E state is an ownership state, the
+eviction of an E block cannot be performed silently; the cache must issue a PutE request to the directory.
+Without an explicit PutE, the directory would not know that the directory was now the owner
+and should respond to incoming coherence requests. Because we assume in this primer that blocks
+in E are owned, this simple solution is what we implement in the MESI protocol in this section.
+   In protocols in which an E block is not owned, an E block can be silently evicted, but the
+protocol complexity increases. Consider the case where core C1 obtains a block in state E and then
+the directory receives a GetS or GetM from core C2. The directory knows that C1 is either i) still
+in state E, ii) in state M (if C1 did a store with a silent upgrade from E to M), or iii) in state I (if the
+protocol allows C1 to perform a silent PutE). If C1 is in M, the directory must forward the request
+to C1 so that C1 can supply the latest version of the data. If C1 is in E, C1 or the directory may
+respond since they both have the same data. If C1 is in I, the directory must respond. One solution,
+which we describe in more detail in our case study on the SGI Origin [10] in Section 8.8.1, is
+to have both C1 and the directory respond. Another solution is to have the directory forward the
+request to C1. If C1 is in I, C1 notifies the directory to respond to C2; else, C1 responds to C2 and
+notifies the directory that it does not need to respond to C2.
+
+8.4 ADDING THE OWNED STATE
+
+Adding the Owned state changes the protocol, compared to MSI, in three important ways: 
+(1) a cache with a block in M that observes a Fwd-GetS changes its state to O 
+    and does not need to (immediately) copy the data back to the LLC/memory,
+(2) more coherence requests are satisfied by caches (in O state) than by the LLC/memory, and 
+(3) there are more than 3-hop transactions (which would have been satisfied by the LLC/memory in an MSI protocol).
+
+  The most interesting difference is the transaction in which a requestor of a block in
+state I or S sends a GetM to the directory when the block is in the O state in the owner cache and in
+the S state in one or more sharer caches. In this case, the directory forwards the GetM to the owner,
+and appends the AckCount. The directory also sends Invalidations to each of the sharers. The owner
+receives the Fwd-GetM and responds to the requestor with Data and the AckCount. The requestor
+uses this received AckCount to determine when it has received the last Inv-Ack. There is a similar
+transaction if the requestor of the GetM was the owner (in state O). The difference here is that the
+directory sends the AckCount directly to the requestor because the requestor is the owner.
+This protocol has a PutO transaction that is nearly identical to the PutM transaction. It
+contains data for the same reason that the PutM transaction contains data, i.e., because both M and
+O are dirty states.
+
+8.5 REPRESENTING DIRECTORY STATE
+
+8.5.1 Coarse Directory
+
+   One way to reduce the directory state is to
+conservatively maintain a coarse list of sharers that is a superset of the actual set of sharers. That is,
+a given entry in the sharer list corresponds to a set of K caches, as illustrated in the middle entry
+of Figure 8.8. If one or more of the caches in that set (may) have the block in state S, then that bit
+in the sharer list is set. A GetM will cause the directory controller to send an Invalidation to all K
+caches in that set. Thus, coarse directories reduce the directory state at the expense of extra interconnection
+network bandwidth for unnecessary Invalidation messages, plus the cache controller
+bandwidth to process these extra Invalidation messages.
+
+8.5.2 Limited Pointer Directory
+
+8.7 PERFORMANCE AND SCALABILITY OPTIMIZATIONS
+
+8.7.2 Non-Stalling Directory Protocols
+
+    For example, when a cache controller has a block in state IMA and receives a Fwd-GetS,
+it processes the request and changes the block’s state to IMAS.
+This state indicates that after the cache controller’s GetM transaction
+completes (i.e., when the last Inv-Ack arrives), the cache controller will change the block state to
+S. At this point, the cache controller must also send the block to the requestor of the GetS and to
+the directory, which is now the owner. By not stalling on the Fwd-GetS, the cache controller can
+improve performance by continuing to process other forwarded requests behind that Fwd-GetS in
+its incoming queue.
+
+8.7.4 Silent vs. Non-Silent Evictions of Blocks in State S
+
+Advantages of Silent PutS
+
+The drawback to the explicit PutS is that it uses interconnection network bandwidth—albeit for
+small data-free PutS and Put-Ack messages—even in cases when it ends up not being helpful. For
+example if core C1 sends a PutS to the directory and then subsequently wants to perform a load to
+this block, C1 sends a GetS to the directory and re-acquires the block in S. If C1 sends this second
+GetS before any intervening GetM requests from other cores, then the PutS transaction served no
+purpose but did consume bandwidth.
+
+Advantages of Explicit PutS
+
+The primary motivation for sending a PutS is that a PutS enables the directory to remove the cache
+no longer sharing the block from its list of sharers. There are three benefits to having a more precise
+sharer list. First, when a subsequent GetM arrives, the directory need not send an Invalidation to
+this cache. The GetM transaction is accelerated by eliminating the Invalidation and having to wait
+for the subsequent Inv-Ack. Second, in a MESI protocol, if the directory is precisely counting the
+sharers, it can identify situations in which the last sharer has evicted its block; when the directory
+knows there are no sharers, it can respond to a GetS with Exclusive data. Third, recall from Section
+8.6.2 that directory caches that use Recalls can benefit from having explicit PutS messages to
+avoid unnecessary Recall requests.
+*********************************
+A secondary motivation for sending a PutS, and the reason our baseline protocol does send a
+PutS, is that it simplifies the protocol by eliminating some races. Notably, without a PutS, a cache
+that silently evicts a block in S and then sends a GetS request to re-obtain that evicted block in S
+can receive an Invalidation from the directory before receiving the data for its GetS. In this situation,
+the cache does not know if the Invalidation pertains to the first period in which it held the
+block in S or the second period (i.e., whether the Invalidation is serialized before or after the GetS).
+The simplest solution to this race is to pessimistically assume the worst case (the Invalidation pertains
+to the second period) and always invalidate the block as soon as its data arrives. More efficient
+solutions exist, but complicate the protocol.**************************************

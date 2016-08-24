@@ -1,0 +1,10 @@
+(               30000) we should get rst_pc. Got 0x00040000. Expected 32'h00040000
+(               40000) pc_out should not be changed. Got 0x00040000. Expected 32'h00040000
+(               50000) pc_out should not be changed. Got 0x00040000. Expected 32'h00040000
+(               60000) pc_out should not be changed. Got 0x00040000. Expected 32'h00040000
+(               70000) pc_out should  be changed. Got 0x20168010. Expected 32'h20168010
+(               80000) pc_out should  be changed. Got 0x20168014. Expected 32'h20168014
+(               90000) pc_out should  be changed. Got 0x24241010. Expected 32'h24241010
+(              100000) pc_out should  be changed. Got 0x22228888. Expected 32'h22228888
+(              110000) pc_out should  be changed. Got 0x22448888. Expected 32'h22448888
+(              120000) pc_out should  be changed. Got 0x22446688. Expected 32'h22446688

@@ -1,0 +1,53 @@
+(               20000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(               30000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(               40000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(               50000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(               60000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(               70000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(               80000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(               90000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              100000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              110000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              120000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              130000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              140000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              150000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              160000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              170000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              182000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+writing btb now
+(              202000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              212000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              222000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              232000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+writing btb now
+(              242000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              252000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              272000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+writing btb now
+(              282000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              292000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+(              302000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+writing btb now
+(              312000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+we should get target 32'h400012b4 from btb
+(              342000)btb_v: 0; btb_type_out:00, btb_target_out:400012b4 
+(              352000)btb_v: 0; btb_type_out:xx, btb_target_out:xxxxxxxX 
+we should get target 32'h40001290 from btb
+(              362000)btb_v: 0; btb_type_out:00, btb_target_out:40001290 
+we should get target 32'h400012b4 from btb
+(              392000)btb_v: 0; btb_type_out:00, btb_target_out:400012b4 
+we should get target 32'h40001240 from btb
+(              422000)btb_v: 0; btb_type_out:10, btb_target_out:40001240 
+we should get target 32'h40001290 from btb
+(              462000)btb_v: 1; btb_type_out:10, btb_target_out:40001290 
+we should get target 32'h400012b4 from btb
+(              482000)btb_v: 0; btb_type_out:00, btb_target_out:400012b4 
+we should get target 32'h40001290 from btb
+(              502000)btb_v: 0; btb_type_out:00, btb_target_out:40001290 
+we should get target 32'h400012b4 from btb
+(              562000)btb_v: 0; btb_type_out:00, btb_target_out:400012b4 
+we should get target 32'h40001290 from btb
+(              582000)btb_v: 0; btb_type_out:00, btb_target_out:40001290 
+we should get target 32'h400012b4 from btb
+(              642000)btb_v: 0; btb_type_out:00, btb_target_out:400012b4 
